@@ -1,0 +1,926 @@
+---
+title: "30 Day Chart Challenge"
+author: Roddy Steeven Zamora Rodríguez
+format: 
+  html: 
+    embed-resources: true
+editor: visual
+---
+
+Para el siguiente trabajo se eligió como herramienta el lenguaje de programación R con las librerías para graficar como ggplot2, dplyr y scales. 
+Y como herramienta secundaria se usó la aplicación web datawraperr debido a su gran facilidad de uso y variadas opciones.
+
+```{R}
+# Instalar paquetes necesarios si aún no están instalados
+if (!requireNamespace("ggplot2", quietly = TRUE)) install.packages("ggplot2")
+if (!requireNamespace("dplyr", quietly = TRUE)) install.packages("dplyr")
+if (!requireNamespace("scales", quietly = TRUE)) install.packages("scales")
+if (!require(waffle)) install.packages("waffle")
+if (!require(highcharter)) install.packages("highcharter")
+if (!require(visNetwork)) install.packages("visNetwork")
+if (!require(igraph)) install.packages("igraph")
+if (!require(ggraph)) install.packages("ggraph")
+if (!require(datasauRus)) install.packages("datasauRus")
+
+
+```
+
+```{R}
+library(ggplot2)
+library(dplyr)
+library(scales)
+library(waffle)
+library(highcharter)
+library(igraph)
+library(visNetwork)
+library(igraph)
+library(ggraph)
+library("datasauRus")
+```
+
+---------------------------- Comparisons ---------------------------------------
+
+**Dia 1: Part to Whole**
+
+```{R}
+# Leer el archivo CSV
+golesCr7 <- read.csv('CristianoGoles.csv')
+```
+
+```{R}
+# Agrupar y contar los goles por club
+goals_by_club <- golesCr7 %>%
+  group_by(Club) %>%
+  summarise(Goals = n()) %>%
+  arrange(desc(Goals))
+
+# Calcular el porcentaje de goles por club
+goals_by_club <- goals_by_club %>%
+  mutate(Percentage = Goals / sum(Goals) * 100)
+
+# Crear etiquetas para la leyenda con nombre del club, cantidad de goles y porcentaje
+goals_by_club <- goals_by_club %>%
+  mutate(LegendLabel = paste(Club, "-", Goals, "(", round(Percentage, 1), "%)", sep = ""))
+
+# Convertir LegendLabel a factor y ordenar de mayor a menor
+goals_by_club$LegendLabel <- factor(goals_by_club$LegendLabel, levels = goals_by_club$LegendLabel)
+
+# Crear gráfico de pastel sin etiquetas dentro y con leyenda ordenada
+ggplot(goals_by_club, aes(x = "", y = Goals, fill = LegendLabel)) +
+  geom_bar(width = 1, stat = "identity", color = "white") +
+  coord_polar("y", start = 0) +
+  theme_void() +
+  labs(title = "Cantidad de Goles de Cristiano Ronaldo por Clubes") +
+  theme(legend.position = "right") +
+  # Usar los colores de la paleta y mostrar la leyenda personalizada ordenada
+  scale_fill_manual(values = scales::hue_pal()(nrow(goals_by_club)))
+```
+
+**Contexto:** Cristiano Ronaldo el máximo goleador en la historia del futbol y ha distribuido sus goles en todos los clubes en los que ha estado, aquí se muestra cómo se han distribuidos esos goles por club.
+
+**Tipo de visualización:** Grafico de torta o pie, que sirve para representar datos categóricos, donde cada categoría se representa como una porción de un círculo.
+
+**Fuente de datos:** Kaggle, https://www.kaggle.com/datasets/azminetoushikwasi/cr7-cristiano-ronaldo-all-club-goals-stats
+
+------------------------------------------------------------------------
+
+**Dia 2: Neo Chart**
+
+```{R}
+# Cargar el dataset integrado en R
+data <- mtcars
+
+# Agrupar por número de cilindros y contar la cantidad de autos
+cylinders_data <- data %>%
+  dplyr::count(cyl = as.factor(cyl))
+
+# Crear el gráfico de barras estilizado
+ggplot(cylinders_data, aes(x = reorder(cyl, n), y = n, fill = cyl)) +
+  geom_bar(stat = "identity") +
+  theme_minimal(base_size = 15) +
+  labs(title = "Número de Autos por Cilindros (Neo Chart)", x = "Cilindros", y = "Cantidad de Autos") +
+  theme(
+    plot.title = element_text(size = 20, face = "bold"),
+    axis.text.x = element_text(angle = 0, hjust = 1),
+    legend.position = "none"
+  ) +
+  scale_fill_manual(values = c("#00A5E0", "#FFAE03", "#F45B69", "#9BDEAC"))
+
+```
+
+**Contexto:** Información sobre 32 automóviles, incluyendo variables de combustible, número de cilindros, pesos y otras características físicas y técnicas de los automóviles.
+
+**Tipo de visualización:** Grafico de Neo Chart, en este caso, se crea un gráfico de barras estilizado.
+
+**Fuente de datos:** Datos integrado en R Studio.
+
+
+
+------------------------------------------------------------------------
+
+**Dia 3: Makeover Chart**
+```{R}
+# Cargar el dataset
+data <- data.frame(
+  Month = seq.Date(from = as.Date("1949-01-01"), by = "month", length.out = length(AirPassengers)),
+  Passengers = as.numeric(AirPassengers)
+)
+
+# Identificar los picos (máximos y mínimos)
+max_index <- which.max(data$Passengers)
+min_index <- which.min(data$Passengers)
+
+# Crear un dataframe con solo los picos
+picos <- data[c(max_index, min_index), ]
+
+# Crear gráfico de líneas con anotaciones
+ggplot(data, aes(x = Month, y = Passengers)) +
+  geom_line(color = "#2E86C1", size = 1.2) +
+  geom_point(color = "#2E86C1", size = 3) +
+  theme_minimal(base_size = 15) +
+  labs(title = "Número de Pasajeros de Aerolíneas", x = "Fecha", y = "Pasajeros") +
+  geom_text(data = picos, aes(label = round(Passengers, 1)), vjust = -0.5, color = "black", size = 4) +
+  theme(
+    plot.title = element_text(size = 20, face = "bold")
+  )
+
+```
+
+
+**Contexto:** AirPassengers fue introducido por el autor John Chambers y contiene información sobre el número mensual de pasajeros de aerolíneas en los Estados Unidos. En este caso se quiere mostrar la tendencia de viajes durante el periodo de años que dispone el dataSet.
+
+**Tipo de visualización:** Makeover Chart
+
+**Fuente de datos:** Datos integrado en R Studio.
+
+------------------------------------------------------------------------
+
+**Dia 4: Waffle Chart**
+
+```{R}
+# Convertir el dataset Titanic en un data frame y agrupar por clase
+data <- as.data.frame(Titanic)
+class_data <- data %>%
+  dplyr::filter(Survived == "Yes") %>%
+  dplyr::group_by(Class) %>%
+  dplyr::summarise(Frequency = sum(Freq))
+
+# Crear gráfico de waffle
+waffle::waffle(class_data$Frequency, rows = 5, size = 0.5, 
+       colors = c("#00A5E0", "#FFAE03", "#F45B69", "#9BDEAC"),
+       title = "Supervivencia en el Titanic por Clase")
+```
+
+**Contexto:** Mediante el grafico se pretende visualizar que magnitud de personas dependiendo la clase del boleto que compraron se salvaron.
+
+**Tipo de visualización:** Waffle Chart
+
+**Fuente de datos:** Datos integrado en R Studio sobre el Titanic.
+
+
+------------------------------------------------------------------------
+
+
+**Dia 5: Diverging Chart**
+
+```{R}
+# Calcular la media del mpg
+data <- mtcars
+mpg_mean <- mean(data$mpg)
+
+# Crear un dataframe para gráfico de barras divergentes
+data <- data %>%
+  dplyr::mutate(Divergence = mpg - mpg_mean) %>%
+  dplyr::mutate(Car = rownames(data)) %>%
+  dplyr::arrange(Divergence)
+
+# Crear gráfico de barras divergentes
+ggplot(data, aes(x = reorder(Car, Divergence), y = Divergence, fill = Divergence > 0)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  scale_fill_manual(values = c("red", "green"), guide = FALSE) +
+  theme_minimal(base_size = 15) +
+  labs(title = "Desviación del Millaje por Galón respecto a la Media ", x = "Auto", y = "Desviación") +
+  theme(
+    plot.title = element_text(size = 20, face = "bold")
+  )
+
+
+
+```
+
+
+
+**Contexto:** Mediante el grafico se visualiza rápidamente y de manera clara cómo se distribuye el consumo de combustible entre diferentes modelos de automóviles.
+
+**Tipo de visualización:** Diverging Chart
+
+**Fuente de datos:** Datos integrado en R Studio sobre algunos modelos de autos.
+
+
+------------------------------------------------------------------------
+
+
+**Dia 6: Data Day**
+
+```{R}
+# Cargar el dataset
+chile_data <- read.csv("chileDead.csv")
+
+# Visualizar las primeras filas para asegurarnos de que se cargó correctamente
+chile_data <- chile_data %>%
+  filter(DEATH_CAUSE != "_T")
+
+# Filtrar los datos relevantes y agrupar por causa de muerte para calcular la media de `OBS_VALUE`
+top_causes <- chile_data %>%
+  filter(!is.na(DEATH_CAUSE) & !is.na(OBS_VALUE)) %>%  # Filtramos datos con causas de muerte y valores observados
+  group_by(DEATH_CAUSE) %>%                            # Agrupamos por causa de muerte
+  summarise(mean_value = mean(OBS_VALUE, na.rm = TRUE)) %>%  # Calculamos la media de OBS_VALUE
+  arrange(desc(mean_value)) %>%                         # Ordenamos de mayor a menor
+  top_n(10, mean_value)                                 # Seleccionamos el top 10
+
+# Graficar el Top 10 de Causas de Muerte
+# Graficar el Top 10 de Causas de Muerte con etiquetas
+ggplot(top_causes, aes(x = reorder(DEATH_CAUSE, mean_value), y = mean_value)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  coord_flip() +  # Volteamos el gráfico para mayor claridad
+  geom_text(aes(label = round(mean_value, 1)),     # Agregamos etiquetas con valores redondeados
+            hjust = -0.2,                          # Ajustamos la posición horizontal fuera de la barra
+            color = "black", size = 2.0) +         # Cambiamos el color y tamaño de la etiqueta
+  labs(title = "Top 10 Causas de Muerte en Chile",
+       x = "Causa de Muerte",
+       y = "Valor Promedio de Mortalidad") +
+  theme_minimal()
+
+```
+
+**Contexto:** Mediante el grafico se visualiza el TOP 10 de las causas de muertes que se tiene registro en Chile en el dataSet proporcionado por OECD.
+
+**Tipo de visualización:**Grafico de barras horizontales.
+
+**Fuente de datos:** OECD Data Explorer https://acortar.link/2UDMpR.
+
+
+---------------------------- Distributions -------------------------------------
+
+
+**Dia 7: Hazards**
+```{R}
+# Calcular el promedio de muertes por causa y seleccionar las 20 principales
+top_causes <- chile_data %>%
+  filter(!is.na(DEATH_CAUSE) & !is.na(OBS_VALUE)) %>%
+  group_by(DEATH_CAUSE) %>%
+  summarise(mean_deaths = mean(OBS_VALUE, na.rm = TRUE)) %>%
+  arrange(desc(mean_deaths)) %>%
+  slice_head(n = 15)  # Seleccionar las 20 principales
+
+# Filtrar el dataset original para mantener solo las 20 causas principales
+risk_data <- chile_data %>%
+  filter(DEATH_CAUSE %in% top_causes$DEATH_CAUSE & !is.na(OBS_VALUE)) %>%
+  group_by(TIME_PERIOD, DEATH_CAUSE) %>%
+  summarise(mean_deaths = mean(OBS_VALUE, na.rm = TRUE)) %>%
+  ungroup()
+
+# Crear el gráfico de línea para ver la tendencia de riesgo a lo largo del tiempo para las 15 causas principales
+ggplot(risk_data, aes(x = TIME_PERIOD, y = mean_deaths, color = DEATH_CAUSE)) +
+  geom_line(size = 1) +
+  labs(title = "Top 15 Causas de Muerte en Chile - Distribución de Riesgos en el Tiempo",
+       x = "Año",
+       y = "Tasa Promedio de Mortalidad",
+       color = "Causa de Muerte") +
+  theme_minimal() +
+  theme(legend.position = "right")
+
+```
+
+**Contexto:** Mediante el grafico se visualiza el TOP 15 de la distribución de riesgo para las diferentes causas de muertes de Chile.
+
+**Tipo de visualización:** Hazards Función de tasa de riesgo.
+
+**Fuente de datos:** OECD Data Explorer https://acortar.link/2UDMpR.
+
+------------------------------------------------------------------------------
+
+
+**Dia 8: Circular**
+
+```{R}
+chile_data <- chile_data %>%
+  filter(SEX != "_T")
+
+# Calcular el total de muertes por género
+gender_distribution <- chile_data %>%
+  filter(!is.na(SEX) & !is.na(OBS_VALUE)) %>%
+  group_by(SEX) %>%
+  summarise(total_deaths = sum(OBS_VALUE, na.rm = TRUE)) %>%
+  arrange(desc(total_deaths))
+
+# Crear el gráfico en forma de anillo
+ggplot(gender_distribution, aes(x = "", y = total_deaths, fill = SEX)) +
+  geom_bar(width = 0.7, stat = "identity") +  # Ajuste el ancho para crear el efecto de anillo
+  coord_polar("y") +
+  labs(title = "Distribución de Muertes por Género en Chile",
+       fill = "Género") +
+  theme_minimal() +
+  theme(axis.text = element_blank(),     # Elimina los números alrededor
+        axis.ticks = element_blank(),    # Elimina las marcas de los ejes
+        panel.grid = element_blank()) +  # Elimina las líneas de la cuadrícula
+  geom_text(aes(label = total_deaths), 
+            position = position_stack(vjust = 0.5))
+
+```
+
+**Contexto:** Mediante el grafico se visualiza cual es el género con mayor tasa de muertes y su comparación con el otro.
+
+**Tipo de visualización:** Circular.
+
+**Fuente de datos:** OECD Data Explorer https://acortar.link/2UDMpR.
+
+------------------------------------------------------------------------------
+
+
+**Dia 9: major/minor**
+
+```{R}
+
+# Leer el dataset de goles de Cristiano Ronaldo
+ronaldo_goals <- read.csv("CristianoGoles.csv")
+
+# Limpiar y preparar los datos
+ronaldo_goals <- ronaldo_goals %>%
+  # Convertir el minuto en un número, eliminando "+X" en goles de tiempo adicional
+  mutate(Minute_clean = as.numeric(gsub("\\+.*", "", Minute))) %>%
+  # Filtrar datos válidos
+  filter(!is.na(Minute_clean))
+
+# Crear el histograma de goles por minuto
+ggplot(ronaldo_goals, aes(x = Minute_clean)) +
+  geom_histogram(binwidth = 5, fill = "skyblue", color = "black", alpha = 0.7) +
+  geom_hline(yintercept = 35, color = "red", linetype = "dashed", size = 1) +  # Línea horizontal en 35 goles
+  labs(title = "Distribución de Goles de Cristiano Ronaldo por Minuto del Partido",
+       x = "Minuto del Partido",
+       y = "Cantidad de Goles") +
+  theme_minimal()
+
+```
+
+**Contexto:** Mediante el grafico de histograma podemos ver la concentración de los minutos del partido en donde Cristiano Ronaldo hace más goles (major) y en qué tiempo hace pocos (minor)
+
+**Tipo de visualización:** Major/minor histograma.
+
+**Fuente de datos:** Kaggle, https://www.kaggle.com/datasets/azminetoushikwasi/cr7-cristiano-ronaldo-all-club-goals-stats
+
+------------------------------------------------------------------------------
+
+
+**Dia 10: physical**
+
+```{R}
+# Leer el dataset desde un archivo CSV (asumiendo que está guardado como 'dengue_data.csv')
+dengue_data <- read.csv("dengue_features_train.csv")
+# Eliminar filas con NAs en las columnas de temperatura
+dengue_data <- na.omit(dengue_data)
+
+# Convertir las columnas de temperatura a formato numérico si es necesario
+dengue_data$station_avg_temp_c <- as.numeric(dengue_data$station_avg_temp_c)
+dengue_data$station_max_temp_c <- as.numeric(dengue_data$station_max_temp_c)
+dengue_data$station_min_temp_c <- as.numeric(dengue_data$station_min_temp_c)
+
+# Crear el boxplot para las temperaturas
+ggplot(dengue_data) +
+  geom_boxplot(aes(x = city, y = station_avg_temp_c, fill = city)) +
+  labs(title = "Boxplot de Temperaturas Promedio por Ciudad",
+       x = "Ciudad",
+       y = "Temperatura Promedio (°C)") +
+  theme_minimal()
+
+# Puedes repetir lo mismo para las otras columnas de temperatura (max y min)
+ggplot(dengue_data) +
+  geom_boxplot(aes(x = city, y = station_max_temp_c, fill = city)) +
+  labs(title = "Boxplot de Temperaturas Máximas por Ciudad",
+       x = "Ciudad",
+       y = "Temperatura Máxima (°C)") +
+  theme_minimal()
+
+ggplot(dengue_data) +
+  geom_boxplot(aes(x = city, y = station_min_temp_c, fill = city)) +
+  labs(title = "Boxplot de Temperaturas Mínimas por Ciudad",
+       x = "Ciudad",
+       y = "Temperatura Mínima (°C)") +
+  theme_minimal()
+```
+
+**Contexto:** Mediante el grafico de caja podemos ver la concentraciones de las temperaturas para ambas ciudades y también sus posibles valores fuera de rango.
+
+**Tipo de visualización:** Physical boxplot.
+
+**Fuente de datos:** https://www.drivendata.org/competitions/44/dengai-predicting-disease-spread/page/82/
+
+------------------------------------------------------------------------------
+
+
+**Dia 11: mobile friendly**
+
+
+```{R}
+# Agrupar los datos por ciudad y semana del año, y calcular la media de temperatura
+data_grouped <- dengue_data %>%
+  group_by(city, weekofyear) %>%
+  summarise(avg_temp = mean(reanalysis_air_temp_k, na.rm = TRUE)) %>%
+  ungroup()  # Desagrupar para evitar problemas en gráficos
+
+# Crear gráfico de líneas interactivo
+highchart() %>%
+  hc_title(text = "Temperatura Promedio Semanal por Ciudad") %>%
+  hc_xAxis(categories = as.character(data_grouped$weekofyear), title = list(text = "Semana del Año")) %>%
+  hc_yAxis(title = list(text = "Temperatura (K)")) %>%
+  hc_add_series(
+    data = data_grouped %>% filter(city == unique(data_grouped$city)[1]) %>% pull(avg_temp),
+    name = unique(data_grouped$city)[1],
+    type = "line", color = "blue"
+  ) %>%
+  hc_add_series(
+    data = data_grouped %>% filter(city == unique(data_grouped$city)[2]) %>% pull(avg_temp),
+    name = unique(data_grouped$city)[2],
+    type = "line", color = "green"
+  ) %>%
+  hc_tooltip(pointFormat = "Temperatura: <b>{point.y:.2f} K</b>")
+```
+
+**Contexto:** Mediante el grafico de líneas podemos ver como varia la temperatura a lo largo de las semanas del año de las dos ciudades involucradas.
+
+**Tipo de visualización:** Mobile fiendly, usando la libreria highchart el cual permite crear gráficos iterativos y con diseño response lo cual es amigable para pantallas móviles.
+
+**Fuente de datos:** https://www.drivendata.org/competitions/44/dengai-predicting-disease-spread/page/82/
+
+
+------------------------------------------------------------------------------
+
+**Dia 12: Reuters Graphics**
+
+```{R}
+### Hacerlo con dataWrapper
+# Calcular el promedio de NDVI por semana y ciudad
+data_heatmap <- dengue_data %>%
+  group_by(year, weekofyear, city) %>%
+  summarize(avg_ndvi = mean(ndvi_ne+ndvi_nw+ndvi_se+ndvi_sw, na.rm = TRUE)) %>%
+  ungroup()
+
+# Graficar un mapa de calor
+ggplot(data_heatmap, aes(x = weekofyear, y = year, fill = avg_ndvi)) +
+  geom_tile(color = "white") +
+  scale_fill_gradient(low = "lightblue", high = "darkgreen") +
+  labs(title = "Mapa de Calor del NDVI Promedio por Semana y Ciudad",
+       x = "Semana del Año",
+       y = "Año",
+       fill = "NDVI Promedio") +
+  facet_wrap(~ city) +  # Crear un gráfico para cada ciudad
+  theme_minimal()
+
+```
+
+
+**Contexto:** Mediante el grafico podemos ver como varia el índice de vegetación en las respectivas ciudades a lo largo de los años y de las semanas de esos años
+
+**Tipo de visualización:** Heatmap.
+
+**Fuente de datos:** https://www.drivendata.org/competitions/44/dengai-predicting-disease-spread/page/82/
+
+----------------------------------relationship-----------------------------------------
+
+
+**Dia 13: Family**
+
+```{R}
+
+# Leer el archivo kinship.data
+kinship_data <- readLines("kinship.data")
+
+# Inicializar listas para padres e hijos
+fathers <- c()
+mothers <- c()
+children <- c()
+
+# Procesar los datos para extraer relaciones
+for (line in kinship_data) {
+  if (grepl("father", line)) {
+    parts <- unlist(strsplit(line, "[(),]"))
+    fathers <- c(fathers, trimws(parts[2]))
+    children <- c(children, trimws(parts[3]))
+  }
+  if (grepl("mother", line)) {
+    parts <- unlist(strsplit(line, "[(),]"))
+    mothers <- c(mothers, trimws(parts[2]))
+    children <- c(children, trimws(parts[3]))
+  }
+}
+
+# Crear un dataframe a partir de las relaciones extraídas
+kinship_df <- data.frame(
+  parent = c(fathers, mothers),
+  child = children,
+  stringsAsFactors = FALSE
+)
+
+# Crear un gráfico interactivo con visNetwork
+nodes <- data.frame(id = unique(c(kinship_df$parent, kinship_df$child)),
+                    label = unique(c(kinship_df$parent, kinship_df$child)),
+                    stringsAsFactors = FALSE)
+
+edges <- data.frame(from = kinship_df$parent, to = kinship_df$child)
+
+# Visualizar el gráfico
+visNetwork(nodes, edges, height = "500px", width = "100%") %>%
+  visEdges(arrows = "to") %>%
+  visOptions(highlightNearest = TRUE, nodesIdSelection = TRUE) %>%
+  visNodes(color = list(background = "lightblue", border = "black"))
+
+```
+
+**Contexto:** Mediante el grafico de grafos se puede ver las relaciones entre los diferentes integrantes del dataSet.
+
+**Tipo de visualización:** Family, usando la librería visNetwork el cual permite crear gráficos iterativos que nos permite elegir la persona a la cual queremos ver sus relaciones familiares.
+
+**Fuente de datos:** https://archive.ics.uci.edu/dataset/55/kinship
+
+--------------------------------------------------------------------------------
+
+
+**Dia 14: Heatmap**
+
+```{R}
+# Filtrar solo las columnas relevantes para el heatmap
+precipitation_data <- dengue_data %>%
+  select(city, weekofyear, station_precip_mm) %>%
+  group_by(city, weekofyear) %>%
+  summarise(avg_precipitation = mean(station_precip_mm, na.rm = TRUE))
+
+# Crear el heatmap
+ggplot(precipitation_data, aes(x = weekofyear, y = city, fill = avg_precipitation)) +
+  geom_tile() +
+  scale_fill_gradient(low = "white", high = "blue", name = "Avg Precipitation (mm)") +
+  labs(title = "Heatmap of Average Precipitation by City and Week of Year",
+       x = "Week of Year",
+       y = "City") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+**Contexto:** El siguiente mapa de calor muestra el nivel de precipitaciones a lo largo de las semanas del año por cada ciudad.
+
+**Tipo de visualización:** Heatmap
+
+**Fuente de datos:** https://www.drivendata.org/competitions/44/dengai-predicting-disease-spread/page/82/
+
+
+--------------------------------------------------------------------------------
+
+
+**Dia 15: Historical**
+
+```{R}
+# Filtrar y calcular la temperatura promedio por año y ciudad
+temperature_yearly <- dengue_data %>%
+  select(city, year, station_avg_temp_c) %>%
+  group_by(city, year) %>%
+  summarise(avg_temperature = mean(station_avg_temp_c, na.rm = TRUE))
+
+# Crear el gráfico de líneas
+ggplot(temperature_yearly, aes(x = year, y = avg_temperature, color = city)) +
+  geom_line(size = 1) +
+  geom_point(size = 2) +
+  labs(title = "Average Temperature Variation Over the Years",
+       x = "Year",
+       y = "Average Temperature (°C)",
+       color = "City") +
+  theme_minimal() +
+  theme(legend.position = "top")
+
+
+```
+
+**Contexto:** El siguiente grafico muestra como varia la temperatura promedio a lo largo de los años para las 2 ciudades involucradas.
+
+**Tipo de visualización:** Grafico de líneas
+
+**Fuente de datos:** https://www.drivendata.org/competitions/44/dengai-predicting-disease-spread/page/82/
+
+--------------------------------------------------------------------------------
+
+
+**Dia 16: Weather**
+
+```{R}
+# Filtrar las columnas relevantes para el gráfico
+humidity_precipitation_data <- dengue_data %>%
+  select(reanalysis_relative_humidity_percent, station_precip_mm) %>%
+  filter(!is.na(reanalysis_relative_humidity_percent) & !is.na(station_precip_mm))
+
+# Crear el diagrama de dispersión
+ggplot(humidity_precipitation_data, aes(x = reanalysis_relative_humidity_percent, y = station_precip_mm)) +
+  geom_point(color = "blue", alpha = 0.6) +  # Cambiar color de los puntos a azul
+  labs(title = "Scatter Plot of Humidity vs. Precipitation",
+       x = "Relative Humidity (%)",
+       y = "Precipitation (mm)") +
+  theme_minimal()
+
+
+
+```
+
+**Contexto:** El siguiente grafico muestra la dispersión entre la humedad y la cantidad de precipitaciones en donde se puede ver una relación directamente proporcional entre las variables.
+
+**Tipo de visualización:** Grafico de dispersión
+
+**Fuente de datos:** https://www.drivendata.org/competitions/44/dengai-predicting-disease-spread/page/82/
+
+
+--------------------------------------------------------------------------------
+
+
+**Dia 17: Networks**
+
+```{R}
+# Cargar el dataset
+les_miserables_data <- read.csv("lesmiserables.csv")
+
+# Crear el grafo a partir del dataframe
+les_miserables_graph <- graph_from_data_frame(les_miserables_data, directed = FALSE)
+
+
+# Crear la visualización de la red de Les Misérables
+ggraph(les_miserables_graph, layout = "fr") +  # Usar el layout Fruchterman-Reingold
+  geom_edge_link(aes(edge_alpha = 0.3), color = "gray") +  # Colorear los enlaces en gris con transparencia
+  geom_node_point(color = "skyblue", size = 5) +  # Colorear los nodos en azul cielo
+  geom_node_text(aes(label = name), vjust = 1, hjust = 1, size = 3) +  # Agregar etiquetas a los nodos
+  theme_void() +  # Sin ejes ni fondo
+  labs(title = "Red de Personajes en Les Misérables")  # Título del gráfico
+
+
+```
+
+**Contexto:** El siguiente grafico se muestra la red de los personajes en Les Misérables y sus relacion con cada uno de los otros personales.
+
+**Tipo de visualización:** Grafico de red
+
+**Fuente de datos:** https://github.com/graphistry/pygraphistry/blob/master/demos/data/lesmiserables.csv
+
+
+--------------------------------------------------------------------------------
+
+
+**Dia 18: Asian Development Bank**
+
+```{R}
+# Cargar el dataset
+asian <- read.csv("ADB Climate Change Financing - 2023-based on commitments.csv", stringsAsFactors = FALSE)
+
+head(asian)
+
+asian$`Project.Financing.Amount....million.` <- as.numeric(gsub(",", "", asian$`Project.Financing.Amount....million.`))
+
+
+# Agrupar por país y sumar las donaciones
+top_donors <- asian %>%
+  group_by(Developing.Member.Country) %>%
+  summarise(Total.Financing = sum(`Project.Financing.Amount....million.`, na.rm = TRUE)) %>%
+  arrange(desc(Total.Financing)) %>%
+  slice_head(n = 10)
+
+# Crear un gráfico de barras
+ggplot(top_donors, aes(x = reorder(Developing.Member.Country, -Total.Financing), y = Total.Financing)) +
+  geom_bar(stat = "identity", fill = "green") +
+  labs(title = "Top 10 Países que Más Donan para Cambio Climático",
+       x = "País",
+       y = "Monto de Financiación (millones $)") +
+  theme_minimal() +
+  coord_flip()  # Para mejor legibilidad
+
+
+```
+
+**Contexto:** El siguiente grafico se muestra los 10 países que más donan para el cambio climático.
+
+**Tipo de visualización:** Grafico de barras horizontales
+
+**Fuente de datos:** https://data.adb.org/dataset/climate-change-financing-adb
+
+
+------------------------------ Time Series ------------------------------------
+
+
+**Dia 19: Dinosaurs**
+
+```{R}
+ggplot(datasaurus_dozen, aes(x = x, y = y)) +
+  geom_point(color = "darkblue", size = 2, alpha = 0.7) +
+  facet_wrap(~dataset, ncol = 3) +
+  theme_minimal() +
+  labs(title = "Datasaurus Dozen: Diferentes Formas con la Misma Estadística",
+       x = "Eje X",
+       y = "Eje Y")
+
+
+
+```
+
+**Contexto:** El siguiente grafico de datasaurus_dozen, varios de sus conjuntos tienen formas únicas, como círculos, estrellas o líneas, y uno de ellos tiene una forma que se parece a un dinosaurio, que es el que le dio el nombre al conjunto completo.
+
+**Tipo de visualización:** Geom Point
+
+**Fuente de datos:** datasaurus_dozen R Studio
+
+
+--------------------------------------------------------------------------------
+
+
+**Dia 20: Correlaciones**
+
+```{R}
+precip_anual_sj <- dengue_data %>%
+  filter(city == "sj") %>%
+  group_by(year) %>%
+  summarize(total_precipitation = sum(precipitation_amt_mm, na.rm = TRUE))
+
+
+# Crear el gráfico para San Juan
+ggplot(precip_anual_sj, aes(x = year, y = total_precipitation)) +
+  geom_point(color = "dodgerblue", size = 3, alpha = 0.7) +
+  geom_smooth(method = "lm", color = "darkred", se = FALSE) +
+  labs(title = "Correlación entre Precipitación Anual y Años en San Juan",
+       x = "Año",
+       y = "Precipitación Anual Total (mm)") +
+  theme_minimal()
+
+
+```
+
+
+
+**Contexto:** El siguiente grafico muestra la correlación de las precipitaciones promedios de la ciudad de San Juan a lo largo de los años.
+
+**Tipo de visualización:** Correlations
+
+**Fuente de datos:** https://www.drivendata.org/competitions/44/dengai-predicting-disease-spread/page/82/
+
+--------------------------------------------------------------------------------
+
+
+**Dia 21: Green Energy**
+
+<iframe title="Tendencia en el Financiamiento de Proyectos verdes por Año (logaritmo)" aria-label="Interactive line chart" id="datawrapper-chart-1Slwp" src="https://datawrapper.dwcdn.net/1Slwp/1/" scrolling="no" frameborder="0" style="width: 0; min-width: 100% !important; border: none;" height="438" data-external="1"></iframe><script type="text/javascript">!function(){"use strict";window.addEventListener("message",(function(a){if(void 0!==a.data["datawrapper-height"]){var e=document.querySelectorAll("iframe");for(var t in a.data["datawrapper-height"])for(var r=0;r<e.length;r++)if(e[r].contentWindow===a.source){var i=a.data["datawrapper-height"][t]+"px";e[r].style.height=i}}}))}();
+</script>
+
+
+**Contexto:** El siguiente grafico muestra como varia la inversión de energías verdes en el tiempo
+
+**Tipo de visualización:** Grafico de lineas con dataWrapper
+
+**Fuente de datos:** https://www.kaggle.com/datasets/anshtanwar/global-data-on-sustainable-energy
+
+
+--------------------------------------------------------------------------------
+
+
+**Dia 22: Mobility**
+
+<iframe title="Porcentaje de movilidad de las personas en la pandemia COVID-19" aria-label="Grouped Bars" id="datawrapper-chart-yeMLt" src="https://datawrapper.dwcdn.net/yeMLt/1/" scrolling="no" frameborder="0" style="width: 0; min-width: 100% !important; border: none;" height="1716" data-external="1"></iframe><script type="text/javascript">!function(){"use strict";window.addEventListener("message",(function(a){if(void 0!==a.data["datawrapper-height"]){var e=document.querySelectorAll("iframe");for(var t in a.data["datawrapper-height"])for(var r=0;r<e.length;r++)if(e[r].contentWindow===a.source){var i=a.data["datawrapper-height"][t]+"px";e[r].style.height=i}}}))}();
+</script>
+
+
+
+**Contexto:** El siguiente grafico muestra como cambio el porcentaje de personas que iban a ciertos lugares, como el parque, las farmacias, etc
+
+**Tipo de visualización:** Grafico de barras horizontales agrupadas
+
+**Fuente de datos:** https://www.kaggle.com/datasets/chaibapat/google-mobility
+
+--------------------------------------------------------------------------------
+
+
+**Dia 23: Tyles**
+
+
+<iframe title="Cantidad de casos de COVID de los países mas afectados." aria-label="Anillos múltiples" id="datawrapper-chart-5sP2e" src="https://datawrapper.dwcdn.net/5sP2e/1/" scrolling="no" frameborder="0" style="width: 0; min-width: 100% !important; border: none;" height="242" data-external="1"></iframe><script type="text/javascript">!function(){"use strict";window.addEventListener("message",(function(a){if(void 0!==a.data["datawrapper-height"]){var e=document.querySelectorAll("iframe");for(var t in a.data["datawrapper-height"])for(var r=0;r<e.length;r++)if(e[r].contentWindow===a.source){var i=a.data["datawrapper-height"][t]+"px";e[r].style.height=i}}}))}();
+</script>
+
+**Contexto:** El siguiente grafico muestra el porcentaje que tuvo cada país de contagiados por COVID 19
+
+**Tipo de visualización:** Grafico de Donut slices
+
+**Fuente de datos:** https://www.kaggle.com/datasets/themrityunjaypathak/covid-cases-and-deaths-worldwide
+
+--------------------------------------------------------------------------------
+
+**Dia 24: ILO Region for Africa**
+
+
+
+<iframe title="PIB Países África" aria-label="Interactive area chart" id="datawrapper-chart-3SA0J" src="https://datawrapper.dwcdn.net/3SA0J/1/" scrolling="no" frameborder="0" style="width: 0; min-width: 100% !important; border: none;" height="421" data-external="1"></iframe><script type="text/javascript">!function(){"use strict";window.addEventListener("message",(function(a){if(void 0!==a.data["datawrapper-height"]){var e=document.querySelectorAll("iframe");for(var t in a.data["datawrapper-height"])for(var r=0;r<e.length;r++)if(e[r].contentWindow===a.source){var i=a.data["datawrapper-height"][t]+"px";e[r].style.height=i}}}))}();
+</script>
+
+
+
+**Contexto:** El siguiente grafico muestra la variación del PIB de los algunos países de África
+
+**Tipo de visualización:** Grafico de Área
+
+**Fuente de datos:** https://ilostat.ilo.org/data/africa/
+
+
+---------------------------------Uncertainties----------------------------------
+
+**Dia 25: Global Change**
+
+
+<iframe title="Mapa de emisiones de CO2" aria-label="Mapa" id="datawrapper-chart-4Q05e" src="https://datawrapper.dwcdn.net/4Q05e/1/" scrolling="no" frameborder="0" style="width: 0; min-width: 100% !important; border: none;" height="369" data-external="1"></iframe><script type="text/javascript">!function(){"use strict";window.addEventListener("message",(function(a){if(void 0!==a.data["datawrapper-height"]){var e=document.querySelectorAll("iframe");for(var t in a.data["datawrapper-height"])for(var r=0;r<e.length;r++)if(e[r].contentWindow===a.source){var i=a.data["datawrapper-height"][t]+"px";e[r].style.height=i}}}))}();
+</script>
+
+
+**Contexto:** El siguiente grafico muestra las emisiones de CO2 de los diferentes países del mundo
+
+**Tipo de visualización:** Grafico de mapa mundial
+
+**Fuente de datos:** https://www.kaggle.com/datasets/thedevastator/global-fossil-co2-emissions-by-country-2002-2022/data
+
+
+-------------------------------------------------------------------------------
+
+**Dia 26: AI**
+
+<iframe title="IAs y su precio mensual por usarlas" aria-label="Gráfico de columnas" id="datawrapper-chart-HVIzO" src="https://datawrapper.dwcdn.net/HVIzO/1/" scrolling="no" frameborder="0" style="width: 0; min-width: 100% !important; border: none;" height="499" data-external="1"></iframe><script type="text/javascript">!function(){"use strict";window.addEventListener("message",(function(a){if(void 0!==a.data["datawrapper-height"]){var e=document.querySelectorAll("iframe");for(var t in a.data["datawrapper-height"])for(var r=0;r<e.length;r++)if(e[r].contentWindow===a.source){var i=a.data["datawrapper-height"][t]+"px";e[r].style.height=i}}}))}();
+</script>
+
+
+
+**Contexto:** El siguiente grafico muestra el precio mensual de algunas herramientas de inteligencia artificial.
+
+**Tipo de visualización:** Grafico de barras verticales
+
+**Fuente de datos:** https://www.kaggle.com/datasets/muhammadtalhaawan/ai-5000-tools-2023
+
+
+-------------------------------------------------------------------------------
+
+**Dia 27: bad/good**
+
+
+<iframe title="Porcentaje de Americanos que creen que el aborto es bueno" aria-label="Interactive line chart" id="datawrapper-chart-MUsyC" src="https://datawrapper.dwcdn.net/MUsyC/1/" scrolling="no" frameborder="0" style="width: 0; min-width: 100% !important; border: none;" height="396" data-external="1"></iframe><script type="text/javascript">!function(){"use strict";window.addEventListener("message",(function(a){if(void 0!==a.data["datawrapper-height"]){var e=document.querySelectorAll("iframe");for(var t in a.data["datawrapper-height"])for(var r=0;r<e.length;r++)if(e[r].contentWindow===a.source){var i=a.data["datawrapper-height"][t]+"px";e[r].style.height=i}}}))}();
+</script>
+
+**Contexto:** El siguiente grafico muestra la tendencia a lo largo de los años del porcentajes de personas en Estados Unidos que creen que el aborto debería ser legal bajo cualquier circunstancia..
+
+**Tipo de visualización:** Grafico de líneas
+
+**Fuente de datos:** https://www.kaggle.com/datasets/justin2028/perspectives-on-abortion-1975-2022/data
+
+
+-------------------------------------------------------------------------------
+
+**Dia 28: Trend**
+
+<iframe title="Esperanza de vida de Ecuador y Estados Unidos." aria-label="Diagrama de dispersión" id="datawrapper-chart-r9M8t" src="https://datawrapper.dwcdn.net/r9M8t/1/" scrolling="no" frameborder="0" style="width: 0; min-width: 100% !important; border: none;" height="417" data-external="1"></iframe><script type="text/javascript">!function(){"use strict";window.addEventListener("message",(function(a){if(void 0!==a.data["datawrapper-height"]){var e=document.querySelectorAll("iframe");for(var t in a.data["datawrapper-height"])for(var r=0;r<e.length;r++)if(e[r].contentWindow===a.source){var i=a.data["datawrapper-height"][t]+"px";e[r].style.height=i}}}))}();
+</script>
+
+
+
+**Contexto:** El siguiente grafico muestra la tendencia de la esperanza de vida de 2 países, Ecuador y Estados Unidos
+
+**Tipo de visualización:** Scater plot
+
+**Fuente de datos:** https://www.kaggle.com/datasets/halimequintero/prediccion-esperanza-de-vida
+
+
+-------------------------------------------------------------------------------
+
+**Dia 29: Black/White**
+
+
+<iframe title="Desempleo en Ecuador" aria-label="Interactive area chart" id="datawrapper-chart-eOoZ2" src="https://datawrapper.dwcdn.net/eOoZ2/1/" scrolling="no" frameborder="0" style="width: 0; min-width: 100% !important; border: none;" height="417" data-external="1"></iframe><script type="text/javascript">!function(){"use strict";window.addEventListener("message",(function(a){if(void 0!==a.data["datawrapper-height"]){var e=document.querySelectorAll("iframe");for(var t in a.data["datawrapper-height"])for(var r=0;r<e.length;r++)if(e[r].contentWindow===a.source){var i=a.data["datawrapper-height"][t]+"px";e[r].style.height=i}}}))}();
+</script>
+
+**Contexto:** El siguiente grafico muestra como la tasa de desempleo varia a través de los años en Ecuador
+
+**Tipo de visualización:** Área
+
+**Fuente de datos:** https://www.kaggle.com/datasets/pantanjali/unemployment-dataset
+
+
+-------------------------------------------------------------------------------
+
+**Dia 30: fivethirtyeight**
+
+
+<iframe title="Aprobación de Joe Biden a través de los años" aria-label="Interactive line chart" id="datawrapper-chart-3p3Yk" src="https://datawrapper.dwcdn.net/3p3Yk/1/" scrolling="no" frameborder="0" style="width: 0; min-width: 100% !important; border: none;" height="420" data-external="1"></iframe><script type="text/javascript">!function(){"use strict";window.addEventListener("message",(function(a){if(void 0!==a.data["datawrapper-height"]){var e=document.querySelectorAll("iframe");for(var t in a.data["datawrapper-height"])for(var r=0;r<e.length;r++)if(e[r].contentWindow===a.source){var i=a.data["datawrapper-height"][t]+"px";e[r].style.height=i}}}))}();
+</script>
+
+
+**Contexto:** El siguiente grafico muestra como ha variado la aprobación del presidente Joe Biden a través del tiempo.
+
+**Tipo de visualización:** MultiLines
+
+**Fuente de datos:** https://projects.fivethirtyeight.com/polls/approval/joe-biden/?ex_cid=abcpromo
+
+
+
